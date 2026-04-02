@@ -203,6 +203,38 @@ logging:
 # 12. 自定义组件导入 (custom_imports)
 #    用于导入用户自定义的组件模块
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 13. 评估与监控配置 (monitor)
+#    实验跟踪、性能分析、可视化
+# -----------------------------------------------------------------------------
+monitor:
+  # 13.1 实验跟踪 (experiment tracking)
+  experiment:
+    enabled: true                              # 是否启用实验跟踪
+    experiment_name: "default"                # 实验组名称
+    save_dir: "./experiments"                 # 实验数据保存目录
+    log_params: true                           # 是否自动记录训练参数
+    log_metrics: true                          # 是否自动记录训练指标
+
+  # 13.2 性能分析 (profiling)
+  profiler:
+    enabled: false                             # 是否启用性能分析 (有轻微开销)
+    profile_memory: false                      # 是否追踪内存使用
+    profile_throughput: true                   # 是否计算吞吐量
+
+  # 13.3 可视化 (visualization)
+  visualization:
+    enabled: true                              # 是否启用可视化
+    save_dir: "./plots"                       # 图表保存目录
+    style: "default"                           # matplotlib 样式
+    figsize: [10, 6]                           # 默认图表大小
+    dpi: 150                                   # 图表分辨率
+    auto_plot: true                            # 训练结束后是否自动生成图表
+
+# -----------------------------------------------------------------------------
+# 14. 自定义组件导入 (custom_imports)
+#    用于导入用户自定义的组件模块
+# -----------------------------------------------------------------------------
 custom_imports: []                           # 自定义模块路径列表
   # 如需启用:
   # - "my_custom_models"                    # 自定义模型模块
