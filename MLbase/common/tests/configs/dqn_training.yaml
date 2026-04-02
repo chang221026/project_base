@@ -1,0 +1,28 @@
+algorithm:
+  type: dqn
+
+environment:
+  type: GymEnvWrapper
+  env_name: CartPole-v1
+
+model:
+  type: MLP
+  input_dim: 4
+  output_dim: 2
+
+loss:
+  type: MSELoss
+
+optimizer:
+  type: Adam
+  lr: 0.001
+
+training:
+  total_steps: 100
+
+device:
+  type: cpu
+
+logging:
+  level: WARNING
+  console_output: false

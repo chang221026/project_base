@@ -1,0 +1,33 @@
+data:
+  fetcher:
+    type: CSVDataFetcher
+    source: data/sample_data.csv
+    target_column: label
+
+model:
+  type: MLP
+  input_dim: 784
+  hidden_dims: [256, 128]
+  output_dim: 10
+  activation: relu
+
+loss:
+  type: CrossEntropyLoss
+
+evaluator:
+  type: AccuracyEvaluator
+
+optimizer:
+  type: Adam
+  lr: 0.001
+
+training:
+  epochs: 1
+  batch_size: 4
+  train_ratio: 0.8
+  val_ratio: 0.1
+  test_ratio: 0.1
+
+logging:
+  level: WARNING
+  console_output: false
