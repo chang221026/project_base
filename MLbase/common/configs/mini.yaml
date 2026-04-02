@@ -1,0 +1,56 @@
+# =============================================================================
+# Common框架 - 最小配置 (快速原型/简单场景)
+# =============================================================================
+# 说明：
+#   - 只包含最少的必需配置，适合快速原型和简单场景
+#   - 所有配置项均有合理的默认值
+#   - 保持最简，仅保留核心必需字段
+# =============================================================================
+ 
+# 数据获取 (必需)
+data:
+  fetcher:
+    type: CSVDataFetcher
+    source: "./data/train.csv"
+    target_column: "label"
+ 
+# 数据集划分 (必需)
+dataset:
+  train_ratio: 0.8
+  val_ratio: 0.2
+ 
+# 模型 (必需)
+model:
+  type: MLP
+ 
+# 损失函数 (必需)
+loss:
+  type: CrossEntropyLoss
+ 
+# 优化器 (必需)
+optimizer:
+  type: Adam
+ 
+# 评估器 (必需)
+evaluator:
+  type: AccuracyEvaluator
+ 
+# 训练参数 (必需)
+training:
+  epochs: 10
+  batch_size: 32
+ 
+# 分布式 (默认auto模式，会自动选择最佳策略)
+distributed:
+  mode: "auto"
+ 
+# 设备 (自动检测)
+device:
+  preferred_device: null
+ 
+# 钩子 (可选，最小配置可以不要)
+hooks: []
+ 
+# 日志 (必需)
+logging:
+  level: "INFO"

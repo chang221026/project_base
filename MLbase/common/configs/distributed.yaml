@@ -1,0 +1,121 @@
+# =============================================================================
+# Common框架 - 分布式训练配置
+# =============================================================================
+# 说明：
+#   - 继承default.yaml所有配置
+#   - 添加分布式训练相关优化配置
+#   - 针对大规模分布式训练场景优化
+# =============================================================================
+ 
+# 继承默认配置的所有内容
+extends: "./default.yaml"
+ 
+# -----------------------------------------------------------------------------
+# 修改分布式配置 - 针对分布式训练优化
+# -----------------------------------------------------------------------------
+distributed:
+  mode: "auto"                                # 自动检测并选择最佳模式
+  backend: "nccl"                             # NCCL后端 (高性能)
+  init_method: "env://"                       # 环境变量方式初始化
+  auto_launch: true                           # 自动启动多进程
+  master_addr: "localhost"                  # 主节点地址 (多机时改为实际IP)
+  master_port: 29500                         # 通信端口
+ 
+  # 分布式策略链
+  strategies:
+    - type: "ddp"                              # 分布式数据并行 (DDP)
+      find_unused_parameters: false           # 是否查找未使用的参数
+ 
+    # 可选: 混合精度训练 (需要GPU支持FP16)
+    # - type: "fp16"
+    #   loss_scale: "dynamic"
+ 
+    # 可选: 梯度累积 (增大有效batch size)
+    # - type: "GradientAccumulation"
+    #   accumulation_steps: 4
+ 
+# -----------------------------------------------------------------------------
+# 修改训练配置 - 适配分布式训练
+# -----------------------------------------------------------------------------
+training:
+  epochs: 100
+  batch_size: 64                              # 增大batch size (分布式后有效batch更大)
+  gradient_accumulation_steps: 4            # 梯度累积 (进一步增大有效batch)
+  eval_freq: 1
+  save_freq: 1
+ 
+# -----------------------------------------------------------------------------
+# 修改优化器配置 - 分布式训练通常需要更大的学习率
+# -----------------------------------------------------------------------------
+optimizer:
+  type: Adam
+  lr: 0.002                                  # 分布式训练通常需要稍大的学习率
+  betas: [0.9, 0.999]
+  eps: 1e-8
+  weight_decay: 0.0001
+  amsgrad: false
+ 
+# -----------------------------------------------------------------------------
+# 钩子配置 - 分布式训练需要特殊处理
+# -----------------------------------------------------------------------------
+hooks:
+  # 检查点 - 只在主进程保存 (rank=0)
+  - type: checkpoint
+    checkpoint_dir: "./checkpoints"
+    save_interval: 5                         # 分布式训练可适当降低保存频率
+    save_best: true
+    monitor: "val_accuracy_top1"            # 监控准确率
+    mode: "max"                               # 准确率越高越好
+    max_keep: 3
+    priority: 10
+ 
+  # 早停 - 监控验证准确率
+  - type: early_stopping
+    monitor: "val_accuracy_top1"
+    mode: "max"
+    patience: 15                             # 分布式训练 patience 可稍大
+    min_delta: 0.001                         # 最小改善量
+    verbose: true
+    priority: 0
+ 
+  # 学习率调度
+  - type: lr_scheduler
+    scheduler_type: "step"
+    step_size: 30
+    gamma: 0.1
+    warmup_epochs: 5                         # 分布式训练建议预热
+    warmup_lr: 1e-4
+    priority: 5
+ 
+  # 日志 - 分布式训练需要在主进程统一日志
+  - type: logging
+    log_interval: 10
+    log_every_n_epochs: 1
+    priority: 0
+ 
+  # TensorBoard (可选)
+  # - type: tensorboard
+  #   log_dir: "./runs"
+  #   log_every_n_steps: 100
+  #   priority: 0
+ 
+# -----------------------------------------------------------------------------
+# 分布式训练启动命令示例
+# -----------------------------------------------------------------------------
+# 单机多卡:
+#   torchrun --nproc_per_node=4 train.py --config distributed.yaml
+#
+# 多机多卡:
+#   # 节点0 (主节点):
+#   torchrun --nproc_per_node=4 --nnodes=2 --node_rank=0 \
+#     --master_addr=10.0.0.1 --master_port=29500 \
+#     train.py --config distributed.yaml
+#
+#   # 节点1:
+#   torchrun --nproc_per_node=4 --nnodes=2 --node_rank=1 \
+#     --master_addr=10.0.0.1 --master_port=29500 \
+#     train.py --config distributed.yaml
+#
+# 使用框架自动启动 (无需torchrun):
+#   python train.py --config distributed.yaml
+#   (框架会自动检测多卡并启动相应数量的进程)

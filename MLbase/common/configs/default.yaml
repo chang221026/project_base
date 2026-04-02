@@ -1,0 +1,209 @@
+# =============================================================================
+# Common框架 - 默认配置文件 (生产级)
+# =============================================================================
+# 说明：
+#   - 这是生产级可用的完整配置，包含所有常见选项和合理默认值
+#   - 使用框架已注册的组件名称
+#   - 配置值符合中国开发者习惯（中文注释）
+# =============================================================================
+ 
+# -----------------------------------------------------------------------------
+# 1. 数据配置 (data)
+#    数据获取、预处理、特征工程、不平衡处理
+# -----------------------------------------------------------------------------
+data:
+  # 1.1 数据获取器 (fetcher) - 从数据源加载数据
+  fetcher:
+    type: CSVDataFetcher                    # 已注册的数据获取器
+    source: "./data/train.csv"              # 数据文件路径
+    delimiter: ","                          # CSV分隔符
+    header: 0                                # 表头行号 (0-based)
+    target_column: "label"                  # 目标列名
+    feature_columns: null                   # 特征列 (null表示自动检测)
+    skip_rows: 0                             # 跳过的行数
+    encoding: "utf-8"                       # 文件编码
+ 
+  # 1.2 数据分析器 (analyzer) - 分析数据基本信息
+  analyzer:
+    type: SimpleDataAnalyzer                 # 已注册的数据分析器
+    compute_correlations: false              # 是否计算相关性
+    percentiles: [25, 50, 75]               # 计算的百分位数
+    max_unique_values: 20                    # 分布分析的最大唯一值数
+ 
+  # 1.3 数据预处理器 (processors) - 数据标准化/归一化等
+  processors:
+    - type: StandardScaler                   # 已注册的处理器 - Z-score标准化
+      with_mean: true                          # 是否中心化数据
+      with_std: true                           # 是否缩放到单位方差
+      copy: true                               # 是否创建数据副本
+ 
+  # 1.4 特征构造器 (constructors) - 特征多项式展开/交互特征等
+  constructors: []                           # 当前为空，不需要特征构造
+    # 如需启用:
+    # - type: PolynomialFeatures              # 已注册的特征构造器
+    #   degree: 2                               # 多项式阶数
+    #   include_bias: false                     # 是否包含偏置项
+    #   interaction_only: false                 # 是否仅包含交互特征
+ 
+  # 1.5 特征选择器 (selectors) - 特征选择/降维
+  selectors: []                              # 当前为空，不需要特征选择
+    # 如需启用:
+    # - type: VarianceThreshold                # 已注册的特征选择器
+    #   threshold: 0.0                          # 方差阈值
+ 
+  # 1.6 不平衡处理 (imbalance_handler) - 处理类别不平衡
+  imbalance_handler: null                    # 当前为null，数据平衡时启用
+    # 如需启用:
+    # type: RandomOverSampler                  # 已注册的不平衡处理器
+    # sampling_strategy: "auto"                # 采样策略
+    # random_state: 42                         # 随机种子
+ 
+# -----------------------------------------------------------------------------
+# 2. 数据集划分配置 (dataset)
+#    训练/验证/测试集划分比例
+# -----------------------------------------------------------------------------
+dataset:
+  train_ratio: 0.7                           # 训练集比例
+  val_ratio: 0.15                            # 验证集比例
+  test_ratio: 0.15                           # 测试集比例
+  shuffle: true                              # 是否打乱数据
+  random_seed: 42                            # 随机种子，确保可复现
+ 
+# -----------------------------------------------------------------------------
+# 3. 模型配置 (model)
+# -----------------------------------------------------------------------------
+model:
+  type: MLP                                   # 已注册的模型类型
+  input_dim: 784                              # 输入特征维度 (如MNIST为28*28=784)
+  hidden_dims: [256, 128]                    # 隐藏层维度列表
+  output_dim: 10                             # 输出维度 (类别数)
+  activation: "relu"                         # 激活函数 (relu/tanh/sigmoid/gelu/leaky_relu/elu)
+ 
+# -----------------------------------------------------------------------------
+# 4. 损失函数配置 (loss)
+# -----------------------------------------------------------------------------
+loss:
+  type: CrossEntropyLoss                     # 已注册的损失函数
+  reduction: "mean"                          # 归约方法 (mean/sum/none)
+  weight: null                               # 类别权重 (可选)
+  label_smoothing: 0.0                       # 标签平滑因子
+ 
+# -----------------------------------------------------------------------------
+# 5. 优化器配置 (optimizer)
+# -----------------------------------------------------------------------------
+optimizer:
+  type: Adam                                 # 已注册的优化器
+  lr: 0.001                                  # 学习率
+  betas: [0.9, 0.999]                       # 动量系数
+  eps: 1e-8                                  # 数值稳定性项
+  weight_decay: 0.0001                       # L2正则化权重衰减
+  amsgrad: false                             # 是否使用AMSGrad变体
+ 
+# -----------------------------------------------------------------------------
+# 6. 评估器配置 (evaluator)
+# -----------------------------------------------------------------------------
+evaluator:
+  type: AccuracyEvaluator                    # 已注册的评估器
+  top_k: 1                                    # Top-k准确率 (1为标准准确率)
+  num_classes: null                           # 类别数 (可选，用于每个类的准确率)
+  average: "macro"                           # 多类别指标平均方法
+ 
+# -----------------------------------------------------------------------------
+# 7. 训练配置 (training)
+# -----------------------------------------------------------------------------
+training:
+  epochs: 100                                # 训练轮数
+  batch_size: 32                              # 批次大小
+  gradient_accumulation_steps: null         # 梯度累积步数 (可选，用于增大有效batch_size)
+  max_steps: null                             # 最大步数 (用于RL等场景)
+  eval_freq: 1                                # 评估频率 (每N个epoch评估一次)
+  save_freq: 1                                # 保存频率 (每N个epoch保存一次)
+ 
+# -----------------------------------------------------------------------------
+# 8. 分布式配置 (distributed)
+#    支持单机单卡、单机多卡、多机多卡训练
+# -----------------------------------------------------------------------------
+distributed:
+  mode: "auto"                                # 分布式模式 (auto/single/single_multi/multi_multi)
+  backend: "nccl"                             # 通信后端 (nccl/gloo/hccl)
+  init_method: "env://"                       # 初始化方法 (env://是环境变量方式)
+  auto_launch: true                           # 是否自动启动多进程 (true时自动检测多卡并启动)
+  master_addr: "localhost"                  # 主节点地址
+  master_port: 29500                         # 通信端口
+  strategies: []                              # 并行策略列表
+    # 如需启用:
+    # - type: "ddp"                            # 分布式数据并行
+    #   find_unused_parameters: false
+    # - type: "fp16"                           # 混合精度训练
+    #   loss_scale: "dynamic"
+ 
+# -----------------------------------------------------------------------------
+# 9. 设备配置 (device)
+#    自动检测设备优先级: NPU > GPU > CPU
+# -----------------------------------------------------------------------------
+device:
+  preferred_device: null                     # 偏好设备 (null=自动检测/npu/gpu/cpu)
+  device_ids: null                            # 指定设备ID列表 (null=自动检测)
+ 
+# -----------------------------------------------------------------------------
+# 10. 训练钩子配置 (hooks)
+#    训练过程中的回调钩子
+# -----------------------------------------------------------------------------
+hooks:
+  # 10.1 检查点钩子 - 保存模型checkpoint
+  - type: checkpoint                          # 已注册的钩子类型
+    checkpoint_dir: "./checkpoints"          # 保存目录
+    save_interval: 1                          # 保存间隔 (每N个epoch)
+    save_best: true                            # 是否保存最佳模型
+    monitor: "val_loss"                      # 监控指标
+    mode: "min"                               # 监控模式 (min:越小越好/max:越大越好)
+    max_keep: 5                               # 最多保留的checkpoint数
+    priority: 10                              # 钩子优先级
+ 
+  # 10.2 早停钩子 - 防止过拟合
+  - type: early_stopping                      # 已注册的钩子类型
+    monitor: "val_loss"                      # 监控指标
+    mode: "min"                               # 监控模式
+    patience: 10                              # 耐心值 (无改善多少epoch后停止)
+    min_delta: 0.0                            # 最小改善量
+    verbose: true                             # 是否打印信息
+    priority: 0
+ 
+  # 10.3 学习率调度器钩子 - 动态调整学习率
+  - type: lr_scheduler                        # 已注册的钩子类型
+    scheduler_type: "step"                   # 调度器类型 (step/exponential/plateau)
+    step_size: 30                             # 学习率下降间隔
+    gamma: 0.1                               # 学习率衰减因子
+    warmup_epochs: 0                         # 预热轮数
+    warmup_lr: 1e-4                          # 预热学习率
+    priority: 5
+ 
+  # 10.4 日志钩子 - 记录训练过程
+  - type: logging                             # 已注册的钩子类型
+    log_interval: 10                         # 日志间隔 (每N个batch)
+    log_every_n_epochs: 1                    # 每个epoch记录
+    priority: 0
+ 
+  # 10.5 TensorBoard钩子 - 可视化 (可选)
+  # - type: tensorboard                       # 已注册的钩子类型
+  #   log_dir: "./runs"                       # 日志目录
+  #   log_every_n_steps: 10                   # 记录间隔
+  #   priority: 0
+ 
+# -----------------------------------------------------------------------------
+# 11. 日志配置 (logging)
+# -----------------------------------------------------------------------------
+logging:
+  level: "INFO"                              # 日志级别 (DEBUG/INFO/WARNING/ERROR/CRITICAL)
+  log_dir: "./logs"                          # 日志目录
+  console_output: true                       # 是否输出到控制台
+  file_output: true                          # 是否输出到文件
+ 
+# -----------------------------------------------------------------------------
+# 12. 自定义组件导入 (custom_imports)
+#    用于导入用户自定义的组件模块
+# -----------------------------------------------------------------------------
+custom_imports: []                           # 自定义模块路径列表
+  # 如需启用:
+  # - "my_custom_models"                    # 自定义模型模块
+  # - "my_custom_losses"                    # 自定义损失函数模块
